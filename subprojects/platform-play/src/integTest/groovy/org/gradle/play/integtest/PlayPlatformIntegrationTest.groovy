@@ -56,6 +56,9 @@ model {
     }
 }
 """
+        if(playVersion.startsWith('2.2.')){
+            executer.expectDeprecationWarning()
+        }
 
         succeeds("stage")
 

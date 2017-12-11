@@ -51,6 +51,9 @@ allprojects {
     }
 }
 """
+        if (version.toString().startsWith('2.2')) {
+            executer.expectDeprecationWarning()
+        }
 
         expect:
         run 'resolveAll'
