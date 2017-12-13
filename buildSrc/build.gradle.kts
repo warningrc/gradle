@@ -16,6 +16,7 @@
 plugins {
     groovy
     `java-gradle-plugin`
+    `kotlin-dsl`
     idea
     eclipse
 }
