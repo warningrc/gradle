@@ -31,6 +31,7 @@ import org.gradle.api.internal.project.ProjectRegistry;
 import org.gradle.api.specs.Spec;
 import org.gradle.initialization.DefaultProjectDescriptor;
 import org.gradle.initialization.NestedBuildFactory;
+import org.gradle.initialization.layout.BuildLayoutFactory;
 import org.gradle.internal.Pair;
 import org.gradle.internal.component.local.model.DefaultProjectComponentIdentifier;
 import org.gradle.internal.concurrent.CompositeStoppable;
@@ -51,11 +52,13 @@ public class DefaultIncludedBuildRegistry implements IncludedBuildRegistry, Stop
 
     // TODO: Locking around this
     private final Map<File, IncludedBuildInternal> includedBuilds = Maps.newLinkedHashMap();
+    private final BuildLayoutFactory buildLayoutFactory;
 
-    public DefaultIncludedBuildRegistry(IncludedBuildFactory includedBuildFactory, DefaultProjectPathRegistry projectRegistry, IncludedBuildDependencySubstitutionsBuilder dependencySubstitutionsBuilder, CompositeBuildContext compositeBuildContext) {
+    public DefaultIncludedBuildRegistry(IncludedBuildFactory includedBuildFactory, DefaultProjectPathRegistry projectRegistry, IncludedBuildDependencySubstitutionsBuilder dependencySubstitutionsBuilder, CompositeBuildContext compositeBuildContext, BuildLayoutFactory buildLayoutFactory) {
         this.includedBuildFactory = includedBuildFactory;
         this.projectRegistry = projectRegistry;
         this.dependencySubstitutionsBuilder = dependencySubstitutionsBuilder;
+        this.buildLayoutFactory = buildLayoutFactory;
         compositeBuildContext.setIncludedBuildRegistry(this);
     }
 
@@ -127,6 +130,12 @@ public class DefaultIncludedBuildRegistry implements IncludedBuildRegistry, Stop
     public ConfigurableIncludedBuild addImplicitBuild(File buildDirectory, NestedBuildFactory nestedBuildFactory) {
         ConfigurableIncludedBuild includedBuild = includedBuilds.get(buildDirectory);
         if (includedBuild == null) {
+            if (buildLayoutFactory.findExistingSettingsFileIn(buildDirectory) == null) {
+                throw new GradleException(
+                    String.format(
+                        "Included build from '%s' must contain a settings file.",
+                        buildDirectory));
+            }
             includedBuild = registerBuild(buildDirectory, nestedBuildFactory);
             registerProjects(Collections.<IncludedBuild>singletonList(includedBuild), true);
         }

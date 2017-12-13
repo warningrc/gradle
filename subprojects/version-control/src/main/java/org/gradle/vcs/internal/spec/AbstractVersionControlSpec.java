@@ -17,10 +17,12 @@
 package org.gradle.vcs.internal.spec;
 
 import com.google.common.base.Preconditions;
+import org.gradle.api.resources.TextResource;
 import org.gradle.vcs.VersionControlSpec;
 
 public abstract class AbstractVersionControlSpec implements VersionControlSpec {
     private String rootDir = "";
+    private TextResource settingsFile = null;
 
     @Override
     public String getRootDir() {
@@ -31,5 +33,15 @@ public abstract class AbstractVersionControlSpec implements VersionControlSpec {
     public void setRootDir(String rootDir) {
         Preconditions.checkNotNull(rootDir, "rootDir should be non-null for '%s'.", getDisplayName());
         this.rootDir = rootDir;
+    }
+
+    @Override
+    public TextResource getSettingsFile() {
+        return settingsFile;
+    }
+
+    @Override
+    public void setSettingsFile(TextResource settingsFile) {
+        this.settingsFile = settingsFile;
     }
 }

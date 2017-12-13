@@ -16,7 +16,13 @@
 
 package org.gradle.vcs.internal;
 
+import com.google.common.io.CharSink;
+import com.google.common.io.Files;
+import org.gradle.api.Action;
 import org.gradle.api.GradleException;
+import org.gradle.api.UncheckedIOException;
+import org.gradle.api.initialization.Settings;
+import org.gradle.api.resources.TextResource;
 import org.gradle.cache.CacheAccess;
 import org.gradle.cache.CacheRepository;
 import org.gradle.cache.FileLockManager;
@@ -24,6 +30,7 @@ import org.gradle.cache.PersistentCache;
 import org.gradle.cache.internal.CleanupActionFactory;
 import org.gradle.cache.internal.FixedAgeOldestCacheCleanup;
 import org.gradle.internal.Factory;
+import org.gradle.internal.IoActions;
 import org.gradle.internal.concurrent.Stoppable;
 import org.gradle.util.GFileUtils;
 import org.gradle.vcs.VersionControlSpec;
@@ -34,6 +41,9 @@ import org.gradle.vcs.internal.spec.DirectoryRepositorySpec;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.Set;
 
 import static org.gradle.cache.internal.filelock.LockOptionsBuilder.mode;
@@ -59,12 +69,55 @@ public class DefaultVersionControlSystemFactory implements VersionControlSystemF
         } else {
             vcs = new GitVersionControlSystem();
         }
-        return new LockingVersionControlSystem(vcs, vcsWorkingDirCache);
+        return new LockingVersionControlSystem(
+            new SettingsGeneratingVersionControlSystem(
+                vcs
+            ),
+            vcsWorkingDirCache
+        );
     }
 
     @Override
     public void stop() {
         vcsWorkingDirCache.close();
+    }
+
+    private static final class SettingsGeneratingVersionControlSystem implements VersionControlSystem {
+        private final VersionControlSystem delegate;
+
+        private SettingsGeneratingVersionControlSystem(VersionControlSystem delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public Set<VersionRef> getAvailableVersions(VersionControlSpec spec) {
+            return delegate.getAvailableVersions(spec);
+        }
+
+        @Override
+        public File populate(final File versionDir, final VersionRef ref, final VersionControlSpec spec) {
+            final File workingDir = new File(delegate.populate(versionDir, ref, spec), spec.getRootDir());
+
+            TextResource textResource = spec.getSettingsFile();
+            if (textResource != null) {
+                final Reader userProvidedSettings = textResource.asReader();
+                IoActions.withResource(userProvidedSettings, new Action<Reader>() {
+                    @Override
+                    public void execute(Reader reader) {
+                        // TODO: Make this configurable
+                        File targetSettings = new File(workingDir, Settings.DEFAULT_SETTINGS_FILE);
+                        try {
+                            CharSink writer = Files.asCharSink(targetSettings, Charset.defaultCharset());
+                            writer.writeFrom(userProvidedSettings);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    }
+                });
+            }
+
+            return workingDir;
+        }
     }
 
     private static final class LockingVersionControlSystem implements VersionControlSystem {

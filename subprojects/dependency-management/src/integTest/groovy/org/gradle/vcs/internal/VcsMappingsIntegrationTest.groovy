@@ -152,7 +152,8 @@ class VcsMappingsIntegrationTest extends AbstractVcsIntegrationTest {
     }
 
     def 'missing settings has clear error'() {
-        file('dep/settings.gradle').delete()
+        depProject.settingsFile.delete()
+
         settingsFile << """
             sourceControl {
                 vcsMappings {
@@ -207,6 +208,138 @@ class VcsMappingsIntegrationTest extends AbstractVcsIntegrationTest {
         expect:
         fails('assemble')
         result.error.contains("rootDir should be non-null")
+    }
+
+    def 'can provide a settings.gradle for a source dependency that does not have one'() {
+        depProject.settingsFile.delete()
+
+        settingsFile << """
+            sourceControl {
+                vcsMappings {
+                    withModule("org.test:dep") {
+                        from vcs(DirectoryRepositorySpec) {
+                            sourceDir = file("dep")
+                            settingsFile = resources.text.fromString '''
+                                rootProject.name = "dep"
+                                println "User-provided settings.gradle"
+                            '''
+                        }
+                    }
+                }
+            }
+        """
+        expect:
+        succeeds("assemble")
+        result.assertOutputContains("User-provided settings.gradle")
+        assertRepoCheckedOut()
+    }
+
+    def 'can provide a settings.gradle that overrides a source dependency settings.gradle'() {
+        settingsFile << """
+            sourceControl {
+                vcsMappings {
+                    withModule("org.test:dep") {
+                        from vcs(DirectoryRepositorySpec) {
+                            sourceDir = file("dep")
+                            settingsFile = resources.text.fromString '''
+                                rootProject.name = "dep"
+                                println "User-provided settings.gradle"
+                            '''
+                        }
+                    }
+                }
+            }
+        """
+        expect:
+        succeeds("assemble")
+        result.assertOutputContains("User-provided settings.gradle")
+        assertRepoCheckedOut()
+    }
+
+    def 'can provide build configuration from settings.gradle'() {
+        settingsFile << """
+            sourceControl {
+                vcsMappings {
+                    withModule("org.test:dep") {
+                        from vcs(DirectoryRepositorySpec) {
+                            sourceDir = file("dep")
+                            settingsFile = resources.text.fromFile("dep-settings.gradle")
+                        }
+                    }
+                }
+            }
+        """
+        file("dep-settings.gradle") << """
+            rootProject.name = "dep"
+            gradle.allprojects { project ->
+                println "Can configure " + project.getIdentityPath() + " from settings"
+            }
+        """
+        expect:
+        succeeds("assemble")
+        result.assertOutputContains("Can configure :dep from settings")
+        assertRepoCheckedOut()
+    }
+
+    def 'can add external plugins to build configuration from settings.gradle'() {
+        buildTestFixture.withBuildInSubDir().singleProjectBuild("external-plugin") {
+            buildFile << """
+                apply plugin: 'java-gradle-plugin'
+                apply plugin: 'groovy'
+            """
+            file("src/main/groovy/MyPlugin.groovy") << """
+                import org.gradle.api.*
+                
+                class MyPlugin implements Plugin<Project> {
+                    void apply(Project project) {
+                        println "External plugin message"
+                    }
+                }
+            """
+            file("src/main/resources/META-INF/gradle-plugins/external-plugin.properties").text = "implementation-class=MyPlugin"
+        }
+
+        settingsFile << """
+            sourceControl {
+                vcsMappings {
+                    withModule("org.test:dep") {
+                        from vcs(DirectoryRepositorySpec) {
+                            sourceDir = file("dep")
+                            settingsFile = resources.text.fromFile("dep-settings.gradle")
+                        }
+                    }
+                }
+            }
+            includeBuild "external-plugin"
+        """
+
+        // Source "repository" does not have a settings or build file
+        depProject.settingsFile.delete()
+        depProject.buildFile.delete()
+        // TODO: We should be able to supply this through the settings file?
+        depProject.buildFile << """
+            allprojects {
+                apply plugin: 'java'
+                apply plugin: 'external-plugin'
+                
+                group = 'org.test'
+                version = '1.0'
+            }
+        """
+        file("dep-settings.gradle") << """
+            rootProject.name = "dep"
+            gradle.projectsLoaded { gradle ->
+                gradle.rootProject.buildscript {
+                    dependencies {
+                        classpath 'org.test:external-plugin:1.0'
+                    }
+                }
+            }
+        """
+        expect:
+        succeeds("assemble")
+        result.assertOutputContains("External plugin message")
+        assertRepoCheckedOut()
     }
 
     void assertRepoCheckedOut(String repoName="dep") {

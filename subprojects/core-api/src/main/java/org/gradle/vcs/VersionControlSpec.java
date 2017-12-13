@@ -17,6 +17,9 @@ package org.gradle.vcs;
 
 import org.gradle.api.Describable;
 import org.gradle.api.Incubating;
+import org.gradle.api.resources.TextResource;
+
+import javax.annotation.Nullable;
 
 /**
  * Captures user-provided information about a version control system.
@@ -51,4 +54,23 @@ public interface VersionControlSpec extends Describable {
      * @since 4.5
      */
     void setRootDir(String rootDir);
+
+    /**
+     * Returns the settings file to be used by the build.
+     * <p>
+     * This returns null if an alternative settings file has not been provided.
+     *
+     * @since 4.5
+     */
+    @Nullable
+    TextResource getSettingsFile();
+
+    /**
+     * Sets the settings file to be used by the build.
+     * <p>
+     * NOTE: This overrides any settings file provided by the build.
+     *
+     * @since 4.5
+     */
+    void setSettingsFile(TextResource settingsScript);
 }
