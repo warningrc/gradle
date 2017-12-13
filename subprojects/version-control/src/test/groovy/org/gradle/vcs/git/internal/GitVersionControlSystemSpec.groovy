@@ -52,19 +52,19 @@ class GitVersionControlSystemSpec extends Specification {
         // Commit a file to the repository
         def textFile = repo.workTree.file('source.txt')
         textFile << 'Hello world!'
-        c1 = repo.commit('Initial commit', textFile)
+        c1 = repo.commit('Initial commit')
         repo.createBranch('release')
         repo.createLightWeightTag('1.0.1')
         repo.createAnnotatedTag('v1.0.1', 'Release 1.0.1')
         def anotherSource = repo.workTree.file('dir/another.txt')
         anotherSource << 'Goodbye world!'
-        c2 = repo.commit('Second Commit', anotherSource)
+        c2 = repo.commit('Second Commit')
         repoHead = GitVersionRef.from(repo.head)
         repoSpec = new DefaultGitVersionControlSpec()
         repoSpec.url = repo.url
 
         submoduleRepo.workTree.file("foo.txt") << "hello from submodule"
-        submoduleRepo.commit("initial commit", submoduleRepo.workTree)
+        submoduleRepo.commit("initial commit")
     }
 
     def 'clone a repository'() {
@@ -118,7 +118,7 @@ class GitVersionControlSystemSpec extends Specification {
         def workingDir = gitVcs.populate(target, repoHead, repoSpec)
         def newFile = repo.workTree.file('newFile.txt')
         newFile << 'I am new!'
-        repo.commit('Add newFile.txt', newFile)
+        repo.commit('Add newFile.txt')
         repoHead = GitVersionRef.from(repo.head)
 
         expect:
@@ -141,13 +141,13 @@ class GitVersionControlSystemSpec extends Specification {
         gitVcs.populate(target, repoHead, repoSpec)
 
         submoduleRepo.workTree.file("foo.txt").text = "goodbye from submodule"
-        submoduleRepo.commit("Change submodule message", submoduleRepo.workTree)
+        submoduleRepo.commit("Change submodule message")
 
         // TODO: JGit doesn't support these commands easily
         "git submodule foreach git fetch".execute([], repo.workTree).waitFor()
         "git submodule foreach git checkout origin/master".execute([], repo.workTree).waitFor()
         repo.git.add().addFilepattern("submodule").call()
-        repo.commit("Update submodule", repo.workTree)
+        repo.commit("Update submodule")
 
         repoHead = GitVersionRef.from(repo.head)
 
@@ -190,7 +190,7 @@ class GitVersionControlSystemSpec extends Specification {
         // Commit a file to the repository
         def textFile = repo2.workTree.file('other.txt')
         textFile << 'Hello world!'
-        repo2.commit('Initial Commit', textFile)
+        repo2.commit('Initial Commit')
         repoSpec.url = repo2.url
         repoHead = GitVersionRef.from(repo2.head)
 
