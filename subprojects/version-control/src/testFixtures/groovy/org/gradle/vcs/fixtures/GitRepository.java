@@ -53,6 +53,15 @@ public class GitRepository extends ExternalResource implements Named {
         this("repo", parentDirectory);
     }
 
+    /**
+     * Returns the underlying Git object from JGit.
+     *
+     * Please consider adding more convenience methods to this fixture over using "raw" Git APIs.
+     */
+    public Git getGit() {
+        return git;
+    }
+
     @Override
     public String getName() {
         return repoName;
@@ -91,6 +100,13 @@ public class GitRepository extends ExternalResource implements Named {
         git.close();
     }
 
+    public void addSubmodule(GitRepository submoduleRepo) throws GitAPIException {
+        git.submoduleAdd().
+            setURI(submoduleRepo.getWorkTree().toString()).
+            setPath(submoduleRepo.getName()).
+            call();
+        commit("add submodule " + submoduleRepo.getName(), getWorkTree());
+    }
     public RevCommit commit(String message, Collection<File> files) throws GitAPIException {
         AddCommand add = git.add();
         for (File file : files) {
