@@ -53,7 +53,7 @@ public abstract class AbstractVersionControlSpec implements VersionControlSpec {
         configuration.execute(plugins);
     }
 
-    PluginRequests getPluginRequests() {
+    public PluginRequests getPluginRequests() {
         if (plugins.specs.isEmpty()) {
             return DefaultPluginRequests.EMPTY;
         } else {
