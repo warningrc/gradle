@@ -26,6 +26,7 @@ import org.gradle.initialization.layout.BuildLayoutFactory;
 import org.gradle.internal.Factory;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.work.WorkerLeaseService;
+import org.gradle.plugin.management.internal.PluginRequests;
 
 import java.io.File;
 
@@ -59,10 +60,10 @@ public class DefaultIncludedBuildFactory implements IncludedBuildFactory {
     }
 
     @Override
-    public IncludedBuildInternal createBuild(File buildDirectory, NestedBuildFactory nestedBuildFactory) {
+    public IncludedBuildInternal createBuild(File buildDirectory, PluginRequests pluginRequests, NestedBuildFactory nestedBuildFactory) {
         validateBuildDirectory(buildDirectory);
         Factory<GradleLauncher> factory = new ContextualGradleLauncherFactory(buildDirectory, nestedBuildFactory, startParameter);
-        DefaultIncludedBuild includedBuild = instantiator.newInstance(DefaultIncludedBuild.class, buildDirectory, factory, workerLeaseService.getCurrentWorkerLease());
+        DefaultIncludedBuild includedBuild = instantiator.newInstance(DefaultIncludedBuild.class, buildDirectory, factory, workerLeaseService.getCurrentWorkerLease(), pluginRequests);
 
         SettingsInternal settingsInternal = includedBuild.getLoadedSettings();
         validateIncludedBuild(includedBuild, settingsInternal);

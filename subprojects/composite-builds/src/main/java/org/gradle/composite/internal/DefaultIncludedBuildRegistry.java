@@ -36,6 +36,8 @@ import org.gradle.internal.Pair;
 import org.gradle.internal.component.local.model.DefaultProjectComponentIdentifier;
 import org.gradle.internal.concurrent.CompositeStoppable;
 import org.gradle.internal.concurrent.Stoppable;
+import org.gradle.plugin.management.internal.DefaultPluginRequests;
+import org.gradle.plugin.management.internal.PluginRequests;
 import org.gradle.util.CollectionUtils;
 import org.gradle.util.Path;
 
@@ -74,7 +76,7 @@ public class DefaultIncludedBuildRegistry implements IncludedBuildRegistry, Stop
 
     @Override
     public IncludedBuildInternal addExplicitBuild(File buildDirectory, NestedBuildFactory nestedBuildFactory) {
-        return registerBuild(buildDirectory, nestedBuildFactory);
+        return registerBuild(buildDirectory, DefaultPluginRequests.EMPTY, nestedBuildFactory);
     }
 
     @Override
@@ -127,7 +129,7 @@ public class DefaultIncludedBuildRegistry implements IncludedBuildRegistry, Stop
     }
 
     @Override
-    public ConfigurableIncludedBuild addImplicitBuild(File buildDirectory, NestedBuildFactory nestedBuildFactory) {
+    public ConfigurableIncludedBuild addImplicitBuild(File buildDirectory, PluginRequests pluginRequests, NestedBuildFactory nestedBuildFactory) {
         ConfigurableIncludedBuild includedBuild = includedBuilds.get(buildDirectory);
         if (includedBuild == null) {
             File settingsFile = buildLayoutFactory.findExistingSettingsFileIn(buildDirectory);
@@ -138,17 +140,17 @@ public class DefaultIncludedBuildRegistry implements IncludedBuildRegistry, Stop
                         buildDirectory));
             }
 
-            includedBuild = registerBuild(buildDirectory, nestedBuildFactory);
+            includedBuild = registerBuild(buildDirectory, pluginRequests, nestedBuildFactory);
             registerProjects(Collections.<IncludedBuild>singletonList(includedBuild), true);
         }
         return includedBuild;
     }
 
-    private IncludedBuildInternal registerBuild(File buildDirectory, NestedBuildFactory nestedBuildFactory) {
+    private IncludedBuildInternal registerBuild(File buildDirectory, PluginRequests pluginRequests, NestedBuildFactory nestedBuildFactory) {
         // TODO: synchronization
         IncludedBuildInternal includedBuild = includedBuilds.get(buildDirectory);
         if (includedBuild == null) {
-            includedBuild = includedBuildFactory.createBuild(buildDirectory, nestedBuildFactory);
+            includedBuild = includedBuildFactory.createBuild(buildDirectory, pluginRequests, nestedBuildFactory);
             includedBuilds.put(buildDirectory, includedBuild);
         }
         return includedBuild;

@@ -24,6 +24,7 @@ import org.gradle.api.initialization.IncludedBuild;
 import org.gradle.api.internal.SettingsInternal;
 import org.gradle.initialization.NestedBuildFactory;
 import org.gradle.internal.Pair;
+import org.gradle.plugin.management.internal.PluginRequests;
 
 import java.io.File;
 import java.util.Collection;
@@ -38,5 +39,5 @@ public interface IncludedBuildRegistry {
     void validateExplicitIncludedBuilds(SettingsInternal settings);
 
     ConfigurableIncludedBuild addExplicitBuild(File buildDirectory, NestedBuildFactory nestedBuildFactory);
-    ConfigurableIncludedBuild addImplicitBuild(File buildDirectory, NestedBuildFactory nestedBuildFactory);
+    ConfigurableIncludedBuild addImplicitBuild(File buildDirectory, PluginRequests pluginRequests, NestedBuildFactory nestedBuildFactory);
 }

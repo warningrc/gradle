@@ -47,6 +47,7 @@ import org.gradle.vcs.internal.VcsMappingInternal;
 import org.gradle.vcs.internal.VcsMappingsStore;
 import org.gradle.vcs.internal.VcsWorkingDirectoryRoot;
 import org.gradle.vcs.internal.VersionControlSystemFactory;
+import org.gradle.vcs.internal.spec.AbstractVersionControlSpec;
 
 import java.io.File;
 import java.util.Collection;
@@ -97,13 +98,12 @@ public class VcsDependencyResolver implements DependencyToComponentIdResolver, C
                     return;
                 }
 
-                //TODO: Allow user to provide settings script in VcsMapping
                 File dependencyWorkingDir = new File(populateWorkingDirectory(baseWorkingDir, spec, versionControlSystem, selectedVersion), spec.getRootDir());
 
                 // TODO: This shouldn't rely on the service registry to find NestedBuildFactory
                 IncludedBuildRegistry includedBuildRegistry = serviceRegistry.get(IncludedBuildRegistry.class);
                 NestedBuildFactory nestedBuildFactory = serviceRegistry.get(NestedBuildFactory.class);
-                IncludedBuild includedBuild = includedBuildRegistry.addImplicitBuild(dependencyWorkingDir, nestedBuildFactory);
+                IncludedBuild includedBuild = includedBuildRegistry.addImplicitBuild(dependencyWorkingDir, ((AbstractVersionControlSpec)spec).getPluginRequests(), nestedBuildFactory);
 
                 Collection<Pair<ModuleVersionIdentifier, ProjectComponentIdentifier>> moduleToProject = includedBuildRegistry.getModuleToProjectMapping(includedBuild);
                 Pair<ModuleVersionIdentifier, ProjectComponentIdentifier> entry = CollectionUtils.findFirst(moduleToProject, new Spec<Pair<ModuleVersionIdentifier, ProjectComponentIdentifier>>() {

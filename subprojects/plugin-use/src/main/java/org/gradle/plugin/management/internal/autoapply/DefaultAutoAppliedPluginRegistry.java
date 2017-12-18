@@ -19,6 +19,7 @@ package org.gradle.plugin.management.internal.autoapply;
 import org.gradle.StartParameter;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ModuleVersionSelector;
+import org.gradle.api.initialization.Settings;
 import org.gradle.api.internal.artifacts.DefaultModuleVersionSelector;
 import org.gradle.plugin.management.internal.DefaultPluginRequest;
 import org.gradle.plugin.management.internal.DefaultPluginRequests;
@@ -35,6 +36,7 @@ import static org.gradle.initialization.StartParameterBuildOptions.BuildScanOpti
 public class DefaultAutoAppliedPluginRegistry implements AutoAppliedPluginRegistry {
 
     private final StartParameter startParameter;
+    private PluginRequests injectedSettingsPlugins = DefaultPluginRequests.EMPTY;
 
     public DefaultAutoAppliedPluginRegistry(StartParameter startParameter) {
         this.startParameter = startParameter;
@@ -48,6 +50,11 @@ public class DefaultAutoAppliedPluginRegistry implements AutoAppliedPluginRegist
         return DefaultPluginRequests.EMPTY;
     }
 
+    @Override
+    public PluginRequests getAutoAppliedPlugins(Settings target) {
+        return injectedSettingsPlugins;
+    }
+
     private boolean shouldApplyScanPlugin(Project target) {
         return startParameter.isBuildScan() && target.getParent() == null && target.getGradle().getParent() == null;
     }
@@ -59,5 +66,9 @@ public class DefaultAutoAppliedPluginRegistry implements AutoAppliedPluginRegist
 
     private static String getScriptDisplayName() {
         return String.format("auto-applied by using --%s", BuildScanOption.LONG_OPTION);
+    }
+
+    public void injectSettingsPlugins(PluginRequests injectedSettingsPlugins) {
+        this.injectedSettingsPlugins = injectedSettingsPlugins;
     }
 }

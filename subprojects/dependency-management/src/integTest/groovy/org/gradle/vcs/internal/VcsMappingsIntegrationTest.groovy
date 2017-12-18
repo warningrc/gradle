@@ -17,6 +17,7 @@
 package org.gradle.vcs.internal
 
 import org.gradle.vcs.internal.spec.DirectoryRepositorySpec
+import spock.lang.Ignore
 
 class VcsMappingsIntegrationTest extends AbstractVcsIntegrationTest {
     def setup() {
@@ -159,6 +160,30 @@ class VcsMappingsIntegrationTest extends AbstractVcsIntegrationTest {
                     withModule("org.test:dep") {
                         from vcs(DirectoryRepositorySpec) {
                             sourceDir = file("dep")
+                        }
+                    }
+                }
+            }
+        """
+        expect:
+        fails('assemble')
+        assertRepoCheckedOut()
+        failureCauseContains("Included build from '")
+        failureCauseContains("' must contain a settings file.")
+    }
+
+    @Ignore("We need to use Plugin<Settings> plugins")
+    def 'main build can requests plugins to be applied to source dependency build'() {
+        file('dep/settings.gradle').delete()
+        settingsFile << """
+            sourceControl {
+                vcsMappings {
+                    withModule("org.test:dep") {
+                        from vcs(DirectoryRepositorySpec) {
+                            sourceDir = file("dep")
+                            plugins {
+                                id "java"
+                            }
                         }
                     }
                 }

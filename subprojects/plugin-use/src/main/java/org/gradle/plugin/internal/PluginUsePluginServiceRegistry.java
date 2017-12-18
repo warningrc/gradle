@@ -60,11 +60,6 @@ public class PluginUsePluginServiceRegistry extends AbstractPluginServiceRegistr
     }
 
     @Override
-    public void registerBuildSessionServices(ServiceRegistration registration) {
-        registration.addProvider(new BuildSessionScopeServices());
-    }
-
-    @Override
     public void registerSettingsServices(ServiceRegistration registration) {
         registration.addProvider(new SettingsScopeServices());
     }
@@ -77,8 +72,7 @@ public class PluginUsePluginServiceRegistry extends AbstractPluginServiceRegistr
         }
     }
 
-    private static class BuildSessionScopeServices {
-
+    private static class BuildScopeServices {
         AutoAppliedPluginRegistry createAutoAppliedPluginRegistry(StartParameter startParameter) {
             return new DefaultAutoAppliedPluginRegistry(startParameter);
         }
@@ -86,9 +80,6 @@ public class PluginUsePluginServiceRegistry extends AbstractPluginServiceRegistr
         AutoAppliedPluginHandler createAutoAppliedPluginHandler(AutoAppliedPluginRegistry registry) {
             return new DefaultAutoAppliedPluginHandler(registry);
         }
-    }
-
-    private static class BuildScopeServices {
 
         PluginResolverFactory createPluginResolverFactory(PluginRegistry pluginRegistry, DocumentationRegistry documentationRegistry,
                                                           InjectedClasspathPluginResolver injectedClasspathPluginResolver,
