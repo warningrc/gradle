@@ -17,7 +17,6 @@
 package org.gradle.vcs.internal
 
 import org.gradle.vcs.internal.spec.DirectoryRepositorySpec
-import spock.lang.Ignore
 
 class VcsMappingsIntegrationTest extends AbstractVcsIntegrationTest {
     def setup() {
@@ -172,9 +171,30 @@ class VcsMappingsIntegrationTest extends AbstractVcsIntegrationTest {
         failureCauseContains("' must contain a settings file.")
     }
 
-    @Ignore("We need to use Plugin<Settings> plugins")
     def 'main build can requests plugins to be applied to source dependency build'() {
-        file('dep/settings.gradle').delete()
+        depProject.settingsFile.delete()
+        depProject.buildFile.delete()
+
+        singleProjectBuild("buildSrc") {
+            file("src/main/groovy/MyPlugin.groovy") << """
+                import org.gradle.api.*
+                import org.gradle.api.initialization.*
+                
+                class MyPlugin implements Plugin<Settings> {
+                    void apply(Settings settings) {
+                        settings.gradle.allprojects {
+                            apply plugin: 'java'
+                            group = 'org.test'
+                            version = '1.0'
+                        }
+                    }
+                }
+            """
+            file("src/main/resources/META-INF/gradle-plugins/com.example.MyPlugin.properties") << """
+                implementation-class=MyPlugin
+            """
+        }
+
         settingsFile << """
             sourceControl {
                 vcsMappings {
@@ -182,7 +202,7 @@ class VcsMappingsIntegrationTest extends AbstractVcsIntegrationTest {
                         from vcs(DirectoryRepositorySpec) {
                             sourceDir = file("dep")
                             plugins {
-                                id "java"
+                                id "com.example.MyPlugin"
                             }
                         }
                     }
@@ -190,10 +210,8 @@ class VcsMappingsIntegrationTest extends AbstractVcsIntegrationTest {
             }
         """
         expect:
-        fails('assemble')
+        succeeds('assemble')
         assertRepoCheckedOut()
-        failureCauseContains("Included build from '")
-        failureCauseContains("' must contain a settings file.")
     }
 
     def 'can build from sub-directory of repository'() {

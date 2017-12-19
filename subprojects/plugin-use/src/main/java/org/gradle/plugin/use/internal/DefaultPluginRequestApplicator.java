@@ -41,13 +41,16 @@ import org.gradle.plugin.management.internal.PluginRequests;
 import org.gradle.plugin.management.internal.PluginResolutionStrategyInternal;
 import org.gradle.plugin.use.PluginId;
 import org.gradle.plugin.use.resolve.internal.AlreadyOnClasspathPluginResolver;
+import org.gradle.plugin.use.resolve.internal.CompositePluginResolver;
 import org.gradle.plugin.use.resolve.internal.PluginResolution;
 import org.gradle.plugin.use.resolve.internal.PluginResolutionResult;
 import org.gradle.plugin.use.resolve.internal.PluginResolveContext;
 import org.gradle.plugin.use.resolve.internal.PluginResolver;
+import org.gradle.plugin.use.resolve.service.internal.RootBuildPluginResolver;
 import org.gradle.util.TextUtil;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.LinkedList;
@@ -62,14 +65,16 @@ import static org.gradle.util.CollectionUtils.collect;
 
 public class DefaultPluginRequestApplicator implements PluginRequestApplicator {
     private final PluginRegistry pluginRegistry;
+    private final RootBuildPluginResolver rootBuildPluginResolver;
     private final PluginResolverFactory pluginResolverFactory;
     private final PluginRepositoriesProvider pluginRepositoriesProvider;
     private final PluginResolutionStrategyInternal pluginResolutionStrategy;
     private final PluginInspector pluginInspector;
     private final CachedClasspathTransformer cachedClasspathTransformer;
 
-    public DefaultPluginRequestApplicator(PluginRegistry pluginRegistry, PluginResolverFactory pluginResolver, PluginRepositoriesProvider pluginRepositoriesProvider, PluginResolutionStrategyInternal pluginResolutionStrategy, PluginInspector pluginInspector, CachedClasspathTransformer cachedClasspathTransformer) {
+    public DefaultPluginRequestApplicator(PluginRegistry pluginRegistry, RootBuildPluginResolver rootBuildPluginResolver, PluginResolverFactory pluginResolver, PluginRepositoriesProvider pluginRepositoriesProvider, PluginResolutionStrategyInternal pluginResolutionStrategy, PluginInspector pluginInspector, CachedClasspathTransformer cachedClasspathTransformer) {
         this.pluginRegistry = pluginRegistry;
+        this.rootBuildPluginResolver = rootBuildPluginResolver;
         this.pluginResolverFactory = pluginResolver;
         this.pluginRepositoriesProvider = pluginRepositoriesProvider;
         this.pluginResolutionStrategy = pluginResolutionStrategy;
@@ -78,12 +83,17 @@ public class DefaultPluginRequestApplicator implements PluginRequestApplicator {
     }
 
     public void applyPlugins(final PluginRequests requests, final ScriptHandlerInternal scriptHandler, @Nullable final PluginManagerInternal target, final ClassLoaderScope classLoaderScope) {
+        final PluginResolver effectivePluginResolver;
+        if (scriptHandler.getSourceFile().getAbsolutePath().endsWith("settings.gradle") && !scriptHandler.getSourceFile().getAbsolutePath().contains("vcsWorkingDirs")) {
+            effectivePluginResolver = wrapInAlreadyInClasspathResolver(classLoaderScope);
+            rootBuildPluginResolver.setRootBuildResolver(effectivePluginResolver);
+        } else {
+            effectivePluginResolver = new CompositePluginResolver(Arrays.asList(wrapInAlreadyInClasspathResolver(classLoaderScope), rootBuildPluginResolver.getRootBuildResolver()));
+        }
         if (target == null || requests.isEmpty()) {
             defineScriptHandlerClassScope(scriptHandler, classLoaderScope, Collections.<PluginImplementation<?>>emptyList());
             return;
         }
-
-        final PluginResolver effectivePluginResolver = wrapInAlreadyInClasspathResolver(classLoaderScope);
 
         List<Result> results = collect(requests, new Transformer<Result, PluginRequestInternal>() {
             public Result transform(PluginRequestInternal request) {
