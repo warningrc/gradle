@@ -26,6 +26,7 @@ import org.gradle.internal.service.scopes.BuildTreeScopeServices
 import org.gradle.internal.service.scopes.GlobalScopeServices
 import org.gradle.internal.service.scopes.GradleUserHomeScopeServiceRegistry
 import org.gradle.internal.time.Time
+import org.gradle.plugin.management.internal.DefaultPluginRequests
 import org.gradle.test.fixtures.file.TestNameTestDirectoryProvider
 import org.gradle.testfixtures.internal.NativeServicesTestFixture
 import org.junit.Rule
@@ -82,7 +83,7 @@ class DefaultGradleLauncherFactoryTest extends Specification {
         parent.buildListener.buildStarted(parent.gradle)
 
         expect:
-        def launcher = parent.gradle.services.get(NestedBuildFactory).nestedInstance(startParameter)
+        def launcher = parent.gradle.services.get(NestedBuildFactory).nestedInstance(startParameter, DefaultPluginRequests.EMPTY)
         launcher.gradle.parent == parent.gradle
 
         def request = launcher.gradle.services.get(BuildRequestMetaData)

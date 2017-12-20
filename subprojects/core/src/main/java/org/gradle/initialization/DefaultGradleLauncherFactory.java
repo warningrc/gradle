@@ -61,6 +61,9 @@ import org.gradle.internal.service.scopes.ServiceRegistryFactory;
 import org.gradle.internal.time.Clock;
 import org.gradle.internal.time.Time;
 import org.gradle.invocation.DefaultGradle;
+import org.gradle.plugin.management.internal.DefaultPluginRequests;
+import org.gradle.plugin.management.internal.PluginRequests;
+import org.gradle.plugin.management.internal.autoapply.AutoAppliedPluginRegistry;
 import org.gradle.profile.ProfileEventAdapter;
 import org.gradle.profile.ReportGeneratingProfileListener;
 import org.gradle.util.DeprecationLogger;
@@ -83,12 +86,12 @@ public class DefaultGradleLauncherFactory implements GradleLauncherFactory {
         listenerManager.useLogger(new ProjectEvaluationLogger(progressLoggerFactory));
     }
 
-    private GradleLauncher createChildInstance(StartParameter startParameter, GradleLauncher parent, BuildTreeScopeServices buildTreeScopeServices, List<?> servicesToStop) {
+    private GradleLauncher createChildInstance(StartParameter startParameter, GradleLauncher parent, PluginRequests pluginRequests, BuildTreeScopeServices buildTreeScopeServices, List<?> servicesToStop) {
         ServiceRegistry services = parent.getGradle().getServices();
         BuildRequestMetaData requestMetaData = new DefaultBuildRequestMetaData(services.get(BuildClientMetaData.class));
         BuildCancellationToken cancellationToken = services.get(BuildCancellationToken.class);
         BuildEventConsumer buildEventConsumer = services.get(BuildEventConsumer.class);
-        return doNewInstance(startParameter, parent, cancellationToken, requestMetaData, buildEventConsumer, buildTreeScopeServices, servicesToStop);
+        return doNewInstance(startParameter, parent, cancellationToken, requestMetaData, buildEventConsumer, pluginRequests, buildTreeScopeServices, servicesToStop);
     }
 
     @Override
@@ -105,7 +108,9 @@ public class DefaultGradleLauncherFactory implements GradleLauncherFactory {
 
         DefaultGradleLauncher launcher = doNewInstance(startParameter, null,
             requestContext.getCancellationToken(),
-            requestContext, requestContext.getEventConsumer(), buildTreeScopeServices,
+            requestContext, requestContext.getEventConsumer(),
+            DefaultPluginRequests.EMPTY,
+            buildTreeScopeServices,
             ImmutableList.of(new Stoppable() {
                 @Override
                 public void stop() {
@@ -131,6 +136,7 @@ public class DefaultGradleLauncherFactory implements GradleLauncherFactory {
     private DefaultGradleLauncher doNewInstance(StartParameter startParameter, GradleLauncher parent,
                                                 BuildCancellationToken cancellationToken,
                                                 BuildRequestMetaData requestMetaData, BuildEventConsumer buildEventConsumer,
+                                                PluginRequests pluginRequests,
                                                 final BuildTreeScopeServices buildTreeScopeServices, List<?> servicesToStop) {
         BuildScopeServices serviceRegistry = new BuildScopeServices(buildTreeScopeServices);
         serviceRegistry.add(BuildRequestMetaData.class, requestMetaData);
@@ -139,6 +145,9 @@ public class DefaultGradleLauncherFactory implements GradleLauncherFactory {
         serviceRegistry.add(BuildCancellationToken.class, cancellationToken);
         NestedBuildFactoryImpl nestedBuildFactory = new NestedBuildFactoryImpl(buildTreeScopeServices);
         serviceRegistry.add(NestedBuildFactory.class, nestedBuildFactory);
+
+        // Auto apply these requested plugins to the settings file
+        serviceRegistry.get(AutoAppliedPluginRegistry.class).injectSettingsPlugins(pluginRequests);
 
         ListenerManager listenerManager = serviceRegistry.get(ListenerManager.class);
 
@@ -205,8 +214,8 @@ public class DefaultGradleLauncherFactory implements GradleLauncherFactory {
         }
 
         @Override
-        public GradleLauncher nestedInstance(StartParameter startParameter) {
-            return createChildInstance(startParameter, parent, buildTreeScopeServices, ImmutableList.of());
+        public GradleLauncher nestedInstance(StartParameter startParameter, PluginRequests pluginRequests) {
+            return createChildInstance(startParameter, parent, pluginRequests, buildTreeScopeServices, ImmutableList.of());
         }
 
         @Override
@@ -215,7 +224,7 @@ public class DefaultGradleLauncherFactory implements GradleLauncherFactory {
             BuildRequestMetaData buildRequestMetaData = new DefaultBuildRequestMetaData(Time.currentTimeMillis());
             BuildSessionScopeServices sessionScopeServices = new BuildSessionScopeServices(userHomeServices, startParameter, buildRequestMetaData, ClassPath.EMPTY);
             BuildTreeScopeServices buildTreeScopeServices = new BuildTreeScopeServices(sessionScopeServices);
-            GradleLauncher childInstance = createChildInstance(startParameter, parent, buildTreeScopeServices, ImmutableList.of(buildTreeScopeServices, sessionScopeServices, new Stoppable() {
+            GradleLauncher childInstance = createChildInstance(startParameter, parent, DefaultPluginRequests.EMPTY, buildTreeScopeServices, ImmutableList.of(buildTreeScopeServices, sessionScopeServices, new Stoppable() {
                 @Override
                 public void stop() {
                     userHomeDirServiceRegistry.release(userHomeServices);

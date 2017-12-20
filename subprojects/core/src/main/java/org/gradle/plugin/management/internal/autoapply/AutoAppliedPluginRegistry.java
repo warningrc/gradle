@@ -21,19 +21,24 @@ import org.gradle.api.initialization.Settings;
 import org.gradle.plugin.management.internal.PluginRequests;
 
 /**
- * Provides a list of plugins that can be auto-applied to a certain Project.
+ * Provides a list of plugins that can be auto-applied to a certain target.
  *
  * @since 4.3
  */
 public interface AutoAppliedPluginRegistry {
 
     /**
-     * Returns the plugins that should be auto-applied to the given
-     * target, based on the current build invocation.
+     * Returns the plugins that should be auto-applied to the given Project target, based on the current build invocation.
      */
     PluginRequests getAutoAppliedPlugins(Project target);
 
+    /**
+     * Returns the plugins that should be auto-applied to the given Settings target, based on the current build invocation.
+     */
     PluginRequests getAutoAppliedPlugins(Settings target);
 
+    /**
+     * Sets the requested plugins for the Settings target. This replaces any previous provided value.
+     */
     void injectSettingsPlugins(PluginRequests injectedSettingsPlugins);
 }

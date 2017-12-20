@@ -29,6 +29,7 @@ import org.gradle.internal.operations.BuildOperationContext;
 import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.operations.CallableBuildOperation;
 import org.gradle.internal.progress.BuildOperationDescriptor;
+import org.gradle.plugin.management.internal.DefaultPluginRequests;
 import org.gradle.util.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +108,8 @@ public class BuildSourceBuilder {
         startParameterArg.setProjectProperties(startParameter.getProjectProperties());
         startParameterArg.setSearchUpwards(false);
         startParameterArg.setProfile(startParameter.isProfile());
-        GradleLauncher gradleLauncher = nestedBuildFactory.nestedInstance(startParameterArg);
+        // TODO: Automatically apply buildSrc appropriate plugins?
+        GradleLauncher gradleLauncher = nestedBuildFactory.nestedInstance(startParameterArg, DefaultPluginRequests.EMPTY);
         GradleInternal build = gradleLauncher.getGradle();
         if (build.getParent().findIdentityPath() == null) {
             // When nested inside a nested build, we need to synthesize a path for this build, as the root project is not yet known for the parent build

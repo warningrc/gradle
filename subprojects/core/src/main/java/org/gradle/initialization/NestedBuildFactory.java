@@ -18,12 +18,13 @@ package org.gradle.initialization;
 
 import org.gradle.StartParameter;
 import org.gradle.internal.invocation.BuildController;
+import org.gradle.plugin.management.internal.PluginRequests;
 
 public interface NestedBuildFactory {
     /**
      * Creates a nested {@link GradleLauncher} instance with the provided parameters.
      */
-    GradleLauncher nestedInstance(StartParameter startParameter);
+    GradleLauncher nestedInstance(StartParameter startParameter, PluginRequests pluginRequests);
 
     /**
      * Creates a {@link BuildController} for nested build instance with the provided parameters.

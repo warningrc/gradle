@@ -62,8 +62,8 @@ public class DefaultIncludedBuildFactory implements IncludedBuildFactory {
     @Override
     public IncludedBuildInternal createBuild(File buildDirectory, PluginRequests pluginRequests, NestedBuildFactory nestedBuildFactory) {
         validateBuildDirectory(buildDirectory);
-        Factory<GradleLauncher> factory = new ContextualGradleLauncherFactory(buildDirectory, nestedBuildFactory, startParameter);
-        DefaultIncludedBuild includedBuild = instantiator.newInstance(DefaultIncludedBuild.class, buildDirectory, factory, workerLeaseService.getCurrentWorkerLease(), pluginRequests);
+        Factory<GradleLauncher> factory = new ContextualGradleLauncherFactory(buildDirectory, nestedBuildFactory, startParameter, pluginRequests);
+        DefaultIncludedBuild includedBuild = instantiator.newInstance(DefaultIncludedBuild.class, buildDirectory, factory, workerLeaseService.getCurrentWorkerLease());
 
         SettingsInternal settingsInternal = includedBuild.getLoadedSettings();
         validateIncludedBuild(includedBuild, settingsInternal);
@@ -74,17 +74,19 @@ public class DefaultIncludedBuildFactory implements IncludedBuildFactory {
         private final File buildDirectory;
         private final NestedBuildFactory nestedBuildFactory;
         private final StartParameter buildStartParam;
+        private final PluginRequests pluginRequests;
 
-        public ContextualGradleLauncherFactory(File buildDirectory, NestedBuildFactory nestedBuildFactory, StartParameter buildStartParam) {
+        public ContextualGradleLauncherFactory(File buildDirectory, NestedBuildFactory nestedBuildFactory, StartParameter buildStartParam, PluginRequests pluginRequests) {
             this.buildDirectory = buildDirectory;
             this.nestedBuildFactory = nestedBuildFactory;
             this.buildStartParam = buildStartParam;
+            this.pluginRequests = pluginRequests;
         }
 
         @Override
         public GradleLauncher create() {
             StartParameter participantStartParam = createStartParameter(buildDirectory);
-            GradleLauncher gradleLauncher = nestedBuildFactory.nestedInstance(participantStartParam);
+            GradleLauncher gradleLauncher = nestedBuildFactory.nestedInstance(participantStartParam, pluginRequests);
             return gradleLauncher;
         }
 

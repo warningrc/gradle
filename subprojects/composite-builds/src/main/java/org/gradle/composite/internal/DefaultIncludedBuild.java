@@ -37,8 +37,6 @@ import org.gradle.internal.component.local.model.DefaultLocalComponentMetadata;
 import org.gradle.internal.concurrent.Stoppable;
 import org.gradle.internal.work.WorkerLeaseRegistry;
 import org.gradle.internal.work.WorkerLeaseService;
-import org.gradle.plugin.management.internal.PluginRequests;
-import org.gradle.plugin.management.internal.autoapply.AutoAppliedPluginRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +52,6 @@ public class DefaultIncludedBuild implements IncludedBuildInternal, Stoppable {
     private final File projectDir;
     private final Factory<GradleLauncher> gradleLauncherFactory;
     private final WorkerLeaseRegistry.WorkerLease parentLease;
-    private final PluginRequests pluginRequests;
     private final List<Action<? super DependencySubstitutions>> dependencySubstitutionActions = Lists.newArrayList();
 
     private boolean resolvedDependencySubstitutions;
@@ -63,11 +60,10 @@ public class DefaultIncludedBuild implements IncludedBuildInternal, Stoppable {
     private String name;
     private Set<Pair<ModuleVersionIdentifier, ProjectComponentIdentifier>> availableModules;
 
-    public DefaultIncludedBuild(File projectDir, Factory<GradleLauncher> launcherFactory, WorkerLeaseRegistry.WorkerLease parentLease, PluginRequests pluginRequests) {
+    public DefaultIncludedBuild(File projectDir, Factory<GradleLauncher> launcherFactory, WorkerLeaseRegistry.WorkerLease parentLease) {
         this.projectDir = projectDir;
         this.gradleLauncherFactory = launcherFactory;
         this.parentLease = parentLease;
-        this.pluginRequests = pluginRequests;
     }
 
     public File getProjectDir() {
@@ -151,8 +147,6 @@ public class DefaultIncludedBuild implements IncludedBuildInternal, Stoppable {
     private GradleLauncher getGradleLauncher() {
         if (gradleLauncher == null) {
             gradleLauncher = gradleLauncherFactory.create();
-            AutoAppliedPluginRegistry autoAppliedPluginRegistry = gradleLauncher.getGradle().getServices().get(AutoAppliedPluginRegistry.class);
-            autoAppliedPluginRegistry.injectSettingsPlugins(pluginRequests);
         }
         return gradleLauncher;
     }

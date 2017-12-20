@@ -27,6 +27,7 @@ import org.gradle.internal.installation.GradleInstallation;
 import org.gradle.internal.invocation.BuildController;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.internal.service.scopes.BuildScopeServices;
+import org.gradle.plugin.management.internal.PluginRequests;
 
 import java.io.File;
 
@@ -53,7 +54,7 @@ public class TestBuildScopeServices extends BuildScopeServices {
     protected NestedBuildFactory createNestedBuildFactory() {
         return new NestedBuildFactory() {
             @Override
-            public GradleLauncher nestedInstance(StartParameter startParameter) {
+            public GradleLauncher nestedInstance(StartParameter startParameter, PluginRequests pluginRequests) {
                 throw new UnsupportedOperationException();
             }
 
