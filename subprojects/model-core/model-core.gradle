@@ -19,6 +19,7 @@
  */
 plugins {
     id 'java-library'
+    id 'strict-compile'
     id 'classycle'
 }
 
@@ -47,7 +48,9 @@ testFixtures {
     from(':diagnostics', 'testFixtures')
 }
 
-strictCompileIgnoreDeprecations()
+strictCompile {
+    ignoreDeprecations = true
+}
 
 classycle {
     excludePatterns = ['org/gradle/model/internal/core/**',
