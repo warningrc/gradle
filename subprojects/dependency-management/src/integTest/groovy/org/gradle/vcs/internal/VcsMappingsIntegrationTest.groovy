@@ -171,7 +171,7 @@ class VcsMappingsIntegrationTest extends AbstractVcsIntegrationTest {
         failureCauseContains("' must contain a settings file.")
     }
 
-    def 'main build can requests plugins to be applied to source dependency build'() {
+    def 'main build can request plugins to be applied to source dependency build'() {
         depProject.settingsFile.delete()
         depProject.buildFile.delete()
 

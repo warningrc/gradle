@@ -56,6 +56,7 @@ import org.gradle.plugin.management.internal.PluginRequests;
 import org.gradle.plugin.management.internal.PluginRequestsSerializer;
 import org.gradle.plugin.management.internal.autoapply.AutoAppliedPluginHandler;
 import org.gradle.plugin.use.internal.PluginRequestApplicator;
+import org.gradle.plugin.use.internal.RootBuildPluginResolver;
 import org.gradle.process.internal.ExecFactory;
 
 public class DefaultScriptPluginFactory implements ScriptPluginFactory {
@@ -119,7 +120,11 @@ public class DefaultScriptPluginFactory implements ScriptPluginFactory {
     }
 
     public ScriptPlugin create(ScriptSource scriptSource, ScriptHandler scriptHandler, ClassLoaderScope targetScope, ClassLoaderScope baseScope, boolean topLevelScript) {
-        return new ScriptPluginImpl(scriptSource, (ScriptHandlerInternal) scriptHandler, targetScope, baseScope, topLevelScript);
+        return new ScriptPluginImpl(scriptSource, (ScriptHandlerInternal) scriptHandler, targetScope, baseScope, topLevelScript, null);
+    }
+
+    public ScriptPlugin create(ScriptSource scriptSource, ScriptHandler scriptHandler, ClassLoaderScope targetScope, ClassLoaderScope baseScope, RootBuildPluginResolver rootBuildPluginResolver) {
+        return new ScriptPluginImpl(scriptSource, (ScriptHandlerInternal) scriptHandler, targetScope, baseScope, true, rootBuildPluginResolver);
     }
 
     private class ScriptPluginImpl implements ScriptPlugin {
@@ -128,13 +133,15 @@ public class DefaultScriptPluginFactory implements ScriptPluginFactory {
         private final ClassLoaderScope baseScope;
         private final ScriptHandlerInternal scriptHandler;
         private final boolean topLevelScript;
+        private final RootBuildPluginResolver rootBuildPluginResolver;
 
-        public ScriptPluginImpl(ScriptSource scriptSource, ScriptHandlerInternal scriptHandler, ClassLoaderScope targetScope, ClassLoaderScope baseScope, boolean topLevelScript) {
+        public ScriptPluginImpl(ScriptSource scriptSource, ScriptHandlerInternal scriptHandler, ClassLoaderScope targetScope, ClassLoaderScope baseScope, boolean topLevelScript, RootBuildPluginResolver rootBuildPluginResolver) {
             this.scriptSource = scriptSource;
             this.targetScope = targetScope;
             this.baseScope = baseScope;
             this.scriptHandler = scriptHandler;
             this.topLevelScript = topLevelScript;
+            this.rootBuildPluginResolver = rootBuildPluginResolver;
         }
 
         public ScriptSource getSource() {
@@ -181,7 +188,7 @@ public class DefaultScriptPluginFactory implements ScriptPluginFactory {
             PluginRequests mergedPluginRequests = autoAppliedPluginHandler.mergeWithAutoAppliedPlugins(initialPluginRequests, target);
 
             PluginManagerInternal pluginManager = topLevelScript ? initialPassScriptTarget.getPluginManager() : null;
-            pluginRequestApplicator.applyPlugins(mergedPluginRequests, scriptHandler, pluginManager, targetScope);
+            pluginRequestApplicator.applyPlugins(mergedPluginRequests, scriptHandler, pluginManager, targetScope, rootBuildPluginResolver);
 
             // Pass 2, compile everything except buildscript {}, pluginRepositories{}, and plugin requests, then run
             final ScriptTarget scriptTarget = secondPassTarget(target);

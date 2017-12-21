@@ -16,13 +16,19 @@
 
 package org.gradle.plugin.use.resolve.service.internal;
 
+import org.gradle.api.internal.initialization.ClassLoaderScope;
+import org.gradle.internal.service.ServiceRegistry;
+import org.gradle.plugin.use.internal.PluginResolverFactory;
+import org.gradle.plugin.use.internal.RootBuildPluginResolver;
 import org.gradle.plugin.use.resolve.internal.PluginResolver;
 
-public class RootBuildPluginResolver {
+public class DefaultRootBuildPluginResolver implements RootBuildPluginResolver {
     private PluginResolver rootBuildResolver;
 
-    public void setRootBuildResolver(PluginResolver rootBuildResolver) {
-        this.rootBuildResolver = rootBuildResolver;
+    @Override
+    public void storeRootResolver(ServiceRegistry serviceRegistry, ClassLoaderScope classLoaderScope) {
+        PluginResolverFactory factory = serviceRegistry.get(PluginResolverFactory.class);
+        this.rootBuildResolver = factory.create(classLoaderScope, null);
     }
 
     public PluginResolver getRootBuildResolver() {

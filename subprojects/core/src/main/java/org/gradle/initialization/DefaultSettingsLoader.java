@@ -107,7 +107,6 @@ public class DefaultSettingsLoader implements SettingsLoader {
         StartParameter buildSrcStartParameter = startParameter.newBuild();
         buildSrcStartParameter.setCurrentDir(new File(settingsLocation.getSettingsDir(), DefaultSettings.DEFAULT_BUILD_SRC_DIR));
         ClassLoaderScope buildSourceClassLoaderScope = buildSourceBuilder.buildAndCreateClassLoader(buildSrcStartParameter);
-
         return settingsProcessor.process(gradle, settingsLocation, buildSourceClassLoaderScope, startParameter);
     }
 

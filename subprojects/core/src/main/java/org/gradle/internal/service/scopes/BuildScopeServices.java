@@ -348,7 +348,8 @@ public class BuildScopeServices extends DefaultServiceRegistry {
     }
 
     protected SettingsProcessor createSettingsProcessor(ScriptPluginFactory scriptPluginFactory, ScriptHandlerFactory scriptHandlerFactory, Instantiator instantiator,
-                                                        ServiceRegistryFactory serviceRegistryFactory, IGradlePropertiesLoader propertiesLoader, BuildOperationExecutor buildOperationExecutor) {
+                                                        ServiceRegistryFactory serviceRegistryFactory, IGradlePropertiesLoader propertiesLoader,
+                                                        BuildOperationExecutor buildOperationExecutor) {
         return new NotifyingSettingsProcessor(
             new RootBuildCacheControllerSettingsProcessor(
                 new PropertiesLoadingSettingsProcessor(

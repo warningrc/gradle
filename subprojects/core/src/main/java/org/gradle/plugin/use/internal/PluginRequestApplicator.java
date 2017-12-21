@@ -26,6 +26,8 @@ import javax.annotation.Nullable;
 // Implementation is provided by 'plugin-use' module
 public interface PluginRequestApplicator {
 
+    void applyPlugins(PluginRequests requests, ScriptHandlerInternal scriptHandler, @Nullable PluginManagerInternal target, ClassLoaderScope classLoaderScope, RootBuildPluginResolver rootBuildPluginResolver);
+
     /**
      * Resolves the given {@link PluginRequests} into the given {@link ScriptHandlerInternal#getScriptClassPath()},
      * exports the resulting classpath into the given {@link ClassLoaderScope}, closes it and then applies

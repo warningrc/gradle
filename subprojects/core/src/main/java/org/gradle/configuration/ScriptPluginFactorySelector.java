@@ -23,6 +23,7 @@ import org.gradle.internal.UncheckedException;
 import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.scripts.ScriptingLanguages;
+import org.gradle.plugin.use.internal.RootBuildPluginResolver;
 import org.gradle.scripts.ScriptingLanguage;
 
 /**
@@ -96,6 +97,13 @@ public class ScriptPluginFactorySelector implements ScriptPluginFactory {
                                ClassLoaderScope baseScope, boolean topLevelScript) {
         ScriptPlugin scriptPlugin = scriptPluginFactoryFor(scriptSource.getFileName())
             .create(scriptSource, scriptHandler, targetScope, baseScope, topLevelScript);
+        return new BuildOperationScriptPlugin(scriptPlugin, buildOperationExecutor);
+    }
+
+    @Override
+    public ScriptPlugin create(ScriptSource scriptSource, ScriptHandler scriptHandler, ClassLoaderScope targetScope, ClassLoaderScope baseScope, RootBuildPluginResolver rootBuildPluginResolver) {
+        ScriptPlugin scriptPlugin = scriptPluginFactoryFor(scriptSource.getFileName())
+            .create(scriptSource, scriptHandler, targetScope, baseScope, rootBuildPluginResolver);
         return new BuildOperationScriptPlugin(scriptPlugin, buildOperationExecutor);
     }
 

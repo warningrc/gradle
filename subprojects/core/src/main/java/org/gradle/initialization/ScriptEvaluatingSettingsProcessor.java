@@ -25,6 +25,7 @@ import org.gradle.configuration.ScriptPluginFactory;
 import org.gradle.groovy.scripts.ScriptSource;
 import org.gradle.internal.time.Time;
 import org.gradle.internal.time.Timer;
+import org.gradle.plugin.use.internal.RootBuildPluginResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,15 +56,22 @@ public class ScriptEvaluatingSettingsProcessor implements SettingsProcessor {
         Map<String, String> properties = propertiesLoader.mergeProperties(Collections.<String, String>emptyMap());
         SettingsInternal settings = settingsFactory.createSettings(gradle, settingsLocation.getSettingsDir(),
                 settingsLocation.getSettingsScriptSource(), properties, startParameter, buildRootClassLoaderScope);
-        applySettingsScript(settingsLocation, settings);
+        RootBuildPluginResolver rootBuildPluginResolver = gradle.getServices().get(RootBuildPluginResolver.class);
+        if (gradle.getParent() == null) {
+            rootBuildPluginResolver.storeRootResolver(gradle.getServices(), settings.getClassLoaderScope());
+            applySettingsScript(settingsLocation, settings, null);
+        } else {
+            applySettingsScript(settingsLocation, settings, rootBuildPluginResolver);
+        }
+
         LOGGER.debug("Timing: Processing settings took: {}", settingsProcessingClock.getElapsed());
         return settings;
     }
 
-    private void applySettingsScript(SettingsLocation settingsLocation, final SettingsInternal settings) {
+    private void applySettingsScript(SettingsLocation settingsLocation, final SettingsInternal settings, RootBuildPluginResolver rootBuildPluginResolver) {
         ScriptSource settingsScriptSource = settingsLocation.getSettingsScriptSource();
         ClassLoaderScope settingsClassLoaderScope = settings.getClassLoaderScope();
-        ScriptPlugin configurer = configurerFactory.create(settingsScriptSource, settings.getBuildscript(), settingsClassLoaderScope, settings.getRootClassLoaderScope(), true);
+        ScriptPlugin configurer = configurerFactory.create(settingsScriptSource, settings.getBuildscript(), settingsClassLoaderScope, settings.getRootClassLoaderScope(), rootBuildPluginResolver);
         configurer.apply(settings);
     }
 
