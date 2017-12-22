@@ -19,6 +19,7 @@ package org.gradle.execution.taskgraph;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -353,6 +354,19 @@ public class DefaultTaskExecutionPlan implements TaskExecutionPlan {
         executionQueue.clear();
         executionQueue.addAll(executionPlan.values());
 
+    }
+
+    @Override
+    public Set<Task> getDependencies(Task task) {
+        TaskInfo node = executionPlan.get(task);
+        if (node == null) {
+            throw new IllegalStateException("Task is not part of the execution plan, no dependency information is available.");
+        }
+        ImmutableSet.Builder<Task> builder = ImmutableSet.builder();
+        for (TaskInfo taskInfo : node.getDependencySuccessors()) {
+            builder.add(taskInfo.getTask());
+        }
+        return builder.build();
     }
 
     private TaskMutationInfo getOrCreateMutationsOf(TaskInfo taskInfo) {
