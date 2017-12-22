@@ -944,7 +944,7 @@ task show {
             }
 
             project(':app') {
-                def attr = Attribute.of('attr', String)
+                def attr = Attribute.of('attr', Foo)
                 dependencies {
                     attributesSchema {
                         attribute(attr)
@@ -957,12 +957,14 @@ task show {
                     doLast {
                         configurations.compile.incoming.artifactView {
                             attributes { 
-                                it.attribute(attr, 'jar') 
+                                it.attribute(attr, objects.named(Foo,'jar')) 
                             }
                         }.files.each { println it }
                     }
                 }
             }
+            
+            interface Foo extends Named {}
         """
 
         expect:
@@ -970,8 +972,8 @@ task show {
         failure.assertHasDescription("Execution failed for task ':app:resolve'.")
         failure.assertHasCause("Could not resolve all files for configuration ':app:compile'.")
         failure.assertHasCause("Could not select a variant of project :lib that matches the consumer attributes.")
-        failure.assertHasCause("Unexpected type for attribute 'attr' provided. Expected a value of type java.lang.String but found a value of type java.lang.Boolean.")
+        failure.assertHasCause("Unexpected type for attribute 'attr' provided. Expected a value of type Foo but found a value of type java.lang.Boolean.")
         failure.assertHasCause("Could not select a variant of project :ui that matches the consumer attributes.")
-        failure.assertHasCause("Unexpected type for attribute 'attr' provided. Expected a value of type java.lang.String but found a value of type java.lang.Integer.")
+        failure.assertHasCause("Unexpected type for attribute 'attr' provided. Expected a value of type Foo but found a value of type java.lang.Integer.")
     }
 }

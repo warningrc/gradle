@@ -206,6 +206,9 @@ final class DefaultImmutableAttributes implements ImmutableAttributes, Attribute
         if (attributeType.isAssignableFrom(attribute.getType())) {
             return (S) get();
         }
+        if (String.class == attributeType) {
+            return Cast.uncheckedCast(value.isolate().toString());
+        }
 
         S converted = coerce(attributeType);
         if (converted != null) {
