@@ -20,11 +20,13 @@ import com.google.common.collect.Lists;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.result.ComponentSelectionReason;
+import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.internal.artifacts.ResolvedVersionConstraint;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.ComponentResolutionState;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.ComponentResult;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.DependencyGraphComponent;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.result.VersionSelectionReasons;
+import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.internal.component.model.ComponentResolveMetadata;
 import org.gradle.internal.component.model.DefaultComponentOverrideMetadata;
 import org.gradle.internal.resolve.ModuleVersionResolveException;
@@ -200,6 +202,27 @@ public class ComponentState implements ComponentResolutionState, ComponentResult
     @Override
     public ComponentIdentifier getComponentId() {
         return getMetaData().getComponentId();
+    }
+
+    @Override
+    public String getVariantName() {
+        NodeState selected = getSelectedNode();
+        return selected == null ? "unknown" : selected.getMetadata().getName();
+    }
+
+    private NodeState getSelectedNode() {
+        for (NodeState node : nodes) {
+            if (node.isSelected()) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public AttributeContainer getVariantAttributes() {
+        NodeState selected = getSelectedNode();
+        return selected == null ? ImmutableAttributes.EMPTY : selected.getMetadata().getAttributes();
     }
 
     @Override
