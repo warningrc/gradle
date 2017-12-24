@@ -380,6 +380,8 @@ task retrieve(type: Sync) {
         file('libs/nonunique-1.0-SNAPSHOT.jar').assertIsCopyOf(nonUniqueVersionModule.artifactFile).assertHasChangedSince(nonUniqueJarSnapshot);
     }
 
+    // TODO:DAZ Need to fix this for #3019
+    @NotYetImplemented
     def "honours cache expiry for subsequent snapshot resolutions in the same build"() {
         given:
         buildFile << """

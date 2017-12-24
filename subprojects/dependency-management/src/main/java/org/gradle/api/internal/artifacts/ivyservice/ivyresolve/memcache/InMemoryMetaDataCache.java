@@ -44,7 +44,8 @@ class InMemoryMetaDataCache {
     }
 
     public void newModuleVersions(ModuleComponentSelector requested, BuildableModuleVersionListingResolveResult result) {
-        if (result.getState() == Listed) {
+        // TODO:DAZ We should be using the CachePolicy on read instead of throwing away anything that is not 100% authoritative
+        if (result.getState() == Listed && result.isAuthoritative()) {
             moduleVersionListing.put(requested, result.getVersions());
         }
     }
