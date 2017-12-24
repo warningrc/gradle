@@ -380,6 +380,69 @@ task retrieve(type: Sync) {
         file('libs/nonunique-1.0-SNAPSHOT.jar').assertIsCopyOf(nonUniqueVersionModule.artifactFile).assertHasChangedSince(nonUniqueJarSnapshot);
     }
 
+    def "honours cache expiry for subsequent snapshot resolutions in the same build"() {
+        given:
+        buildFile << """
+repositories {
+    maven { url "${mavenHttpRepo.uri}" }
+}
+
+configurations {
+    fresh {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+    stale
+}
+ 
+dependencies {
+    stale "org.gradle.integtests.resolve:unique:1.0-SNAPSHOT"
+    fresh "org.gradle.integtests.resolve:unique:1.0-SNAPSHOT"
+}
+
+task resolveStaleThenFresh {
+    doFirst {
+        project.sync {
+            from configurations.stale
+            into 'stale'
+        }
+        project.sync {
+            from configurations.fresh
+            into 'fresh'
+        }
+    }
+}
+"""
+
+        when: "snapshot modules are published"
+        def snapshotModule = mavenHttpRepo.module("org.gradle.integtests.resolve", "unique", "1.0-SNAPSHOT").publish()
+
+        and:
+        expectModuleServed(snapshotModule)
+
+        and:
+        run 'resolveStaleThenFresh'
+
+        then:
+        file('stale').assertHasDescendants('unique-1.0-SNAPSHOT.jar')
+        file('fresh').assertHasDescendants('unique-1.0-SNAPSHOT.jar')
+        def firstStaleVersion = file('stale/unique-1.0-SNAPSHOT.jar').assertIsCopyOf(snapshotModule.artifactFile).snapshot()
+        def firstFreshVersion = file('fresh/unique-1.0-SNAPSHOT.jar').assertIsCopyOf(snapshotModule.artifactFile).snapshot()
+
+        when: "Republish the snapshots"
+        snapshotModule.publishWithChangedContent()
+
+        and:
+        server.resetExpectations()
+        expectChangedModuleServed(snapshotModule)
+
+        and:
+        run 'resolveStaleThenFresh'
+
+        then:
+        file('fresh/unique-1.0-SNAPSHOT.jar').assertHasChangedSince(firstFreshVersion)
+        file('fresh/unique-1.0-SNAPSHOT.jar').assertIsCopyOf(snapshotModule.artifactFile)
+    }
+
     def "does not download snapshot artifacts after expiry when snapshot has not changed"() {
         buildFile << """
 repositories {
