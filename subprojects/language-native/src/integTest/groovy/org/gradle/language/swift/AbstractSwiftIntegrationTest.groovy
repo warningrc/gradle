@@ -16,13 +16,12 @@
 
 package org.gradle.language.swift
 
-import org.gradle.language.AbstractNativeLanguageComponentIntegrationTest
 import org.gradle.util.Matchers
 import org.gradle.util.Requires
 import org.gradle.util.TestPrecondition
 
 @Requires(TestPrecondition.SWIFT_SUPPORT)
-abstract class AbstractSwiftIntegrationTest extends AbstractNativeLanguageComponentIntegrationTest {
+abstract class AbstractSwiftIntegrationTest extends AbstractSwiftComponentIntegrationTest {
     def "skip assemble tasks when no source"() {
         given:
         makeSingleProject()
@@ -46,23 +45,6 @@ abstract class AbstractSwiftIntegrationTest extends AbstractNativeLanguageCompon
         failure.assertHasDescription("Execution failed for task '$developmentBinaryCompileTask'.")
         failure.assertHasCause("A build operation failed.")
         failure.assertThatCause(Matchers.containsText("Swift compiler failed while compiling swift file(s)"))
-    }
-
-    def "binaries have the right Swift version"() {
-        given:
-        makeSingleProject()
-        buildFile << """
-            task verifyBinariesSwiftVersion {
-                doLast {
-                    ${allBinariesOfMainComponentBuildScript}.each {
-                        assert it.targetPlatform.swiftVersion == SwiftVersion.${toolChain.swiftVersion.name()}
-                    }
-                }
-            }
-        """
-
-        expect:
-        succeeds "verifyBinariesSwiftVersion"
     }
 
     protected abstract List<String> getTasksToAssembleDevelopmentBinary()

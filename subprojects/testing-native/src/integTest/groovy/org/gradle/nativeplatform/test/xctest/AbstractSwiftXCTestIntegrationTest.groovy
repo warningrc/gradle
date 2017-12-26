@@ -18,14 +18,14 @@ package org.gradle.nativeplatform.test.xctest
 
 import org.gradle.integtests.fixtures.DefaultTestExecutionResult
 import org.gradle.integtests.fixtures.TestExecutionResult
-import org.gradle.language.AbstractNativeLanguageComponentIntegrationTest
+import org.gradle.language.swift.AbstractSwiftComponentIntegrationTest
 import org.gradle.nativeplatform.fixtures.app.XCTestSourceElement
 import org.gradle.util.Requires
 import org.gradle.util.TestPrecondition
 import spock.lang.Unroll
 
 @Requires([TestPrecondition.SWIFT_SUPPORT])
-abstract class AbstractSwiftXCTestIntegrationTest extends AbstractNativeLanguageComponentIntegrationTest {
+abstract class AbstractSwiftXCTestIntegrationTest extends AbstractSwiftComponentIntegrationTest {
     def setup() {
         buildFile << """
             apply plugin: 'xctest'
