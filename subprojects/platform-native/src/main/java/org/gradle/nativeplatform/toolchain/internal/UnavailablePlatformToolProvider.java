@@ -109,6 +109,6 @@ public class UnavailablePlatformToolProvider implements PlatformToolProvider {
 
     @Override
     public CompilerMetadata getCompilerMetadata() {
-        throw new UnsupportedOperationException();
+        throw failure();
     }
 }
