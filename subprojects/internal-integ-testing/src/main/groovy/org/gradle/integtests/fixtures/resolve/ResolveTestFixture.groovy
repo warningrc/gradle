@@ -566,6 +566,9 @@ allprojects {
             checkVariant = true
             variantName = name
             variantAttributes = attributes.collect { "$it.key=$it.value" }.join(',')
+            if (id.startsWith("project ")) {
+                configuration = variantName
+            }
             this
         }
     }
